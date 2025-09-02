@@ -1,0 +1,13 @@
+stages:
+    - check-macros
+
+#before_script:
+#    - apk add --update bash grep
+
+check-macros:
+    stage: check-macros
+    only:
+        - master
+    script:
+        - bash SynoBuildConf/gitlab-ci check-macros
+

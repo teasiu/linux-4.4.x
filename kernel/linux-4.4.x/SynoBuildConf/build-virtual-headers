@@ -1,0 +1,24 @@
+#!/bin/bash
+# Copyright (c) 2000-2020 Synology Inc. All rights reserved.
+# vim:ft=sh
+
+export ARCH="$ARCH"
+export CROSS_COMPILE="$ToolChainPrefix"
+export EXTRA_CFLAGS="-fdiagnostics-color=always"
+source "$ConfDir/_debug"
+
+cp -f "synoconfigs/$PLATFORM_ABBR" .config
+if [ -f ".debug" ]; then
+	INFO ".debug detected. Configured as debug mode."
+	config_debug_mode
+	make olddefconfig
+else
+	make oldconfig
+fi
+
+# Install kernel headers
+make prepare
+make headers_install
+
+cp -fa include/linux/syno_autoconf.h usr/include/linux/syno_autoconf.h
+install -Dm644 include/linux/synobios.h usr/include/linux/synobios.h

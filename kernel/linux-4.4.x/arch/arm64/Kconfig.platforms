@@ -1,0 +1,281 @@
+menu "Platform selection"
+
+config ARCH_MVEBU
+	bool "Marvell EBU SoC Family"
+	select SYNO_LSP_ARMADA37XX
+	select ARM_GIC_ODMI
+	select ARM_GIC_V2M
+	select MVEBU_PIC
+	select MVEBU_ICU_IRQ
+	select MVEBU_CLK_COMMON
+	select ARMADA_37XX_CLK
+	select GPIOLIB
+	select GPIOLIB_IRQCHIP
+	select OF_GPIO
+	select PINCTRL
+	select PINCTRL_ARMADA_37XX
+	select ARMADA_AP806_CORE_CLK
+	select ARMADA_AP806_RING_CLK
+	select ARMADA_AP806_CPU_CLK
+	select ARMADA_AP806_SYSCON
+	select ARMADA_CP110_SYSCON
+	select PINCTRL_ARMADA_AP806
+	select PINCTRL_ARMADA_CP110
+	select ARMADA_37XX_PM_CLK if SYNO_LSP_ARMADA_17_04_02
+	help
+	  This enables support for Marvell EBU familly, including:
+	   - Armada 3700 SoC Family
+	   - Armada 7K SoC Family
+	   - Armada 8K SoC Family
+
+config ARCH_MVEBU_PD
+	bool "Marvell EBU SoC Emulation"
+	select ARCH_MVEBU
+	help
+	  This enables emulation support for Marvell EBU family, including:
+	   - Armada 3700 SoC Family
+	   - Armada 7K SoC Family
+	   - Armada 8K SoC Family
+
+config ARCH_BCM_IPROC
+	bool "Broadcom iProc SoC Family"
+	help
+	  This enables support for Broadcom iProc based SoCs
+
+config ARCH_BERLIN
+	bool "Marvell Berlin SoC Family"
+	select ARCH_REQUIRE_GPIOLIB
+	select DW_APB_ICTL
+	select DW_APB_TIMER_OF
+	help
+	  This enables support for Marvell Berlin SoC Family
+
+config ARCH_EXYNOS
+	bool
+	help
+	  This enables support for Samsung Exynos SoC family
+
+config ARCH_EXYNOS7
+	bool "ARMv8 based Samsung Exynos7"
+	select ARCH_EXYNOS
+	select COMMON_CLK_SAMSUNG
+	select HAVE_S3C2410_WATCHDOG if WATCHDOG
+	select HAVE_S3C_RTC if RTC_CLASS
+	select PINCTRL
+	select PINCTRL_EXYNOS
+
+	help
+	  This enables support for Samsung Exynos7 SoC family
+
+config ARCH_LAYERSCAPE
+	bool "ARMv8 based Freescale Layerscape SoC family"
+	help
+	  This enables support for the Freescale Layerscape SoC family.
+
+config ARCH_HISI
+	bool "Hisilicon SoC Family"
+	select ARM_GIC
+	select CLKSRC_OF
+	select PINCTRL
+	select PM_OPP
+	help
+	  This enables support for Hisilicon ARMv8 SoC family
+
+config SYNO_MAX_SATA_ID
+    int "Max SATA ID for Synology platform"
+    default 4
+    help
+      Set the maximum SATA ID for Synology kernel features
+
+config SYNO_USB_NUM_CASTRATED_XHC
+    int "Number of Castrated XHC USB ports"
+    default 2
+    help
+      Set the number of USB XHC ports
+
+config SYNO_USB_VBUS_NUM_GPIO
+    int "Number of USB VBUS GPIOs"
+    default 1
+    help
+      Set the number of VBUS GPIOs for Synology USB
+
+config SYNO_PWRPIN_ENCODE_LEN
+    int "SATA Power Pin Encode Length"
+    default 8
+    help
+      Set the power pin encode length for Synology bootargs
+
+config SYNO_PORT_SIGN
+    string "Synology Port Sign"
+    default "S"
+    help
+      Set the port sign prefix for Synology bootargs
+
+config SYNO_SOFTLOCKUP_COUNTER_MAX
+    int "Maximum Synology Softlockup Counter"
+    default 10
+    help
+      Maximum value for Synology softlockup counter in watchdog
+
+config SYNO_MAX_READAHEAD_SIZE
+    int "Maximum readahead size for Synology"
+    default 512
+
+config SYNO_IO_ERROR_LIMIT_MSG_SHIFT
+    int "Shift for grouping I/O error messages"
+    default 6
+    range 0 16
+    help
+      This value controls how buffer I/O error messages are grouped.
+      6 means errors are grouped per 64 blocks.
+
+config SYNO_MAX_INTERNAL_DISK
+    int "Maximum number of internal disks"
+    default 24
+    range 1 255
+    help
+      Maximum number of internal disks supported by DSM.
+
+config SYNO_SATA_RETRY_TIMES
+    int "Synology SATA retry times"
+    default 5
+    range 1 20
+    help
+      Number of times to retry SATA detection before giving up.
+
+config SYNO_ISCSI_DEVICE_PREFIX
+    string "iSCSI device prefix"
+    default "iscsi"
+
+config SYNO_SATA_DEVICE_PREFIX
+    string "SATA device prefix"
+    default "sata"
+
+config SYNO_USB_POWER_OFF_TIME
+    int "USB power off time (ms)"
+    default 100
+
+config SYNO_HUB_POWER_CYCLE_EXTRA_DELAY_TIME
+    int "Hub power cycle extra delay (ms)"
+    default 50
+
+config SYNO_USB_POWER_ON_TIME
+    int "USB power on time (ms)"
+    default 100
+
+config ARCH_MEDIATEK
+	bool "Mediatek MT65xx & MT81xx ARMv8 SoC"
+	select ARM_GIC
+	select PINCTRL
+	help
+	  Support for Mediatek MT65xx & MT81xx ARMv8 SoCs
+
+config ARCH_QCOM
+	bool "Qualcomm Platforms"
+	select PINCTRL
+	help
+	  This enables support for the ARMv8 based Qualcomm chipsets.
+
+config ARCH_ROCKCHIP
+	bool "Rockchip Platforms"
+	select ARCH_HAS_RESET_CONTROLLER
+	select ARCH_REQUIRE_GPIOLIB
+	select PINCTRL
+	select PINCTRL_ROCKCHIP
+	help
+	  This enables support for the ARMv8 based Rockchip chipsets,
+	  like the RK3368.
+
+config ARCH_SEATTLE
+	bool "AMD Seattle SoC Family"
+	help
+	  This enables support for AMD Seattle SOC Family
+
+config ARCH_STRATIX10
+	bool "Altera's Stratix 10 SoCFPGA Family"
+	help
+	  This enables support for Altera's Stratix 10 SoCFPGA Family.
+
+config ARCH_TEGRA
+	bool "NVIDIA Tegra SoC Family"
+	select ARCH_HAS_RESET_CONTROLLER
+	select ARCH_REQUIRE_GPIOLIB
+	select CLKDEV_LOOKUP
+	select CLKSRC_MMIO
+	select CLKSRC_OF
+	select GENERIC_CLOCKEVENTS
+	select HAVE_CLK
+	select PINCTRL
+	select RESET_CONTROLLER
+	help
+	  This enables support for the NVIDIA Tegra SoC family.
+
+config ARCH_TEGRA_132_SOC
+	bool "NVIDIA Tegra132 SoC"
+	depends on ARCH_TEGRA
+	select PINCTRL_TEGRA124
+	help
+	  Enable support for NVIDIA Tegra132 SoC, based on the Denver
+	  ARMv8 CPU.  The Tegra132 SoC is similar to the Tegra124 SoC,
+	  but contains an NVIDIA Denver CPU complex in place of
+	  Tegra124's "4+1" Cortex-A15 CPU complex.
+
+config ARCH_SPRD
+	bool "Spreadtrum SoC platform"
+	help
+	  Support for Spreadtrum ARM based SoCs
+
+config ARCH_THUNDER
+	bool "Cavium Inc. Thunder SoC Family"
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
+config ARCH_VEXPRESS
+	bool "ARMv8 software model (Versatile Express)"
+	select ARCH_REQUIRE_GPIOLIB
+	select COMMON_CLK_VERSATILE
+	select POWER_RESET_VEXPRESS
+	select VEXPRESS_CONFIG
+	help
+	  This enables support for the ARMv8 software model (Versatile
+	  Express).
+
+config ARCH_XGENE
+	bool "AppliedMicro X-Gene SOC Family"
+	help
+	  This enables support for AppliedMicro X-Gene SOC Family
+
+config ARCH_ZYNQMP
+	bool "Xilinx ZynqMP Family"
+	help
+	  This enables support for Xilinx ZynqMP Family
+
+config ARCH_RTD129X
+	bool "Realtek RTD1296 SoC"
+	select ARM_GIC
+	select CLKSRC_OF
+	select PINCTR
+	help
+	  This enables support for Realtek RTD129X SoC.
+
+config ARCH_RTD16xx
+	bool "Realtek RTD16xx SoC Family"
+	select ARM_GIC
+	select CLKSRC_OF
+	select PINCTRL
+	select RTK_PLATFORM
+	select RTK_PLATFORM_PSCI
+	select PM_OPP
+#	select IRDA
+	help
+	  This enables support for Realtek RTD16xx SoC Family
+
+config RTK_PLATFORM
+	def_bool n
+	help
+	  Realtek Platform except RTD129X
+
+config RTK_PLATFORM_PSCI
+	def_bool n
+
+endmenu

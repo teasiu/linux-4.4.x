@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+ci_help()
+{
+    cat <<-EOF
+Usage:
+    $(basename "$0") <command>
+
+Commands:
+    check-macros
+EOF
+}
+
+ci_init()
+{
+    # simple alternatives of utilities from lnxscripts
+    local _func=
+    for _func in INFO ERROR WARNING; do
+        if ! type -p "$_func"; then
+            eval "$_func() { echo \"[$_func] \$*\"; }"
+        fi
+    done
+}
+
+ci_check_macros()
+{
+    source "$(dirname "$0")/_check_macros"
+    check_define_macro
+}
+
+
+ci_init
+
+if [ -z "$1" ]; then
+    ci_help
+elif type -p "ci_${1//-/_}"; then
+    cmd="${1//-/_}"; shift
+    ci_"$cmd" "$@"
+else
+    ERROR "Command $1 not found"
+fi
+

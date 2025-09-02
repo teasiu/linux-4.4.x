@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+config_debug_mode()
+{
+    local _cfg=
+    local _enabled="
+        #
+        # printk and dmesg options
+        #
+        #CONFIG_DYNAMIC_DEBUG
+
+        #
+        # Memory Debugging
+        #
+        CONFIG_DEBUG_PAGEALLOC
+        CONFIG_PAGE_POISONING
+
+        #CONFIG_DEBUG_OBJECTS
+        #CONFIG_DEBUG_OBJECTS_SELFTEST
+        #CONFIG_DEBUG_OBJECTS_FREE
+        #CONFIG_DEBUG_OBJECTS_TIMERS
+        #CONFIG_DEBUG_OBJECTS_WORK
+        #CONFIG_DEBUG_OBJECTS_RCU_HEAD
+        #CONFIG_DEBUG_OBJECTS_PERCPU_COUNTER
+        #CONFIG_DEBUG_SLAB
+        #CONFIG_DEBUG_SLAB_LEAK
+        #CONFIG_SLUB_DEBUG_ON
+        #CONFIG_SLUB_STATS
+        #CONFIG_DEBUG_KMEMLEAK
+        #CONFIG_DEBUG_STACK_USAGE
+
+        #CONFIG_DEBUG_VM
+        #CONFIG_DEBUG_VM_VMACACHE
+        #CONFIG_DEBUG_VM_RB
+        #CONFIG_DEBUG_VIRTUAL
+        #CONFIG_DEBUG_NOMMU_REGIONS
+        #CONFIG_DEBUG_MEMORY_INIT
+        #CONFIG_MEMORY_NOTIFIER_ERROR_INJECT
+        #CONFIG_DEBUG_PER_CPU_MAPS
+        #CONFIG_DEBUG_HIGHMEM
+        #CONFIG_DEBUG_STACKOVERFLOW
+        #CONFIG_KMEMCHECK
+
+        #
+        # Kernel address sanitizer (Kasan)
+        #
+        CONFIG_KASAN
+        CONFIG_KASAN_INLINE
+
+        #
+        # Debug Lockups and Hangs
+        #
+        #CONFIG_SCHED_STACK_END_CHECK
+        #CONFIG_DEBUG_TIMEKEEPING
+        #CONFIG_TIMER_STATS
+        CONFIG_DEBUG_PREEMPT
+
+        #
+        # Lock Debugging
+        #
+        CONFIG_DEBUG_SPINLOCK
+        CONFIG_DEBUG_MUTEXES
+        #CONFIG_DEBUG_LOCK_ALLOC
+        #CONFIG_PROVE_LOCKING
+        #CONFIG_LOCK_STAT
+        CONFIG_DEBUG_LOCKDEP
+        CONFIG_DEBUG_ATOMIC_SLEEP
+
+        #CONFIG_TRACE_IRQFLAGS
+        #CONFIG_DEBUG_KOBJECT
+        #CONFIG_DEBUG_KOBJECT_RELEASE
+        #CONFIG_DEBUG_LIST
+        #CONFIG_DEBUG_PI_LIST
+        #CONFIG_DEBUG_SG
+        #CONFIG_DEBUG_NOTIFIERS
+        #CONFIG_DEBUG_CREDENTIALS
+
+        #
+        # RCU Debugging
+        #
+        #CONFIG_PROVE_RCU
+        #CONFIG_PROVE_RCU_REPEATEDLY
+        #CONFIG_RCU_TRACE
+
+        #
+        # Fault-injection framework
+        #
+        #CONFIG_FAULT_INJECTION
+        #CONFIG_FAILSLAB
+        #CONFIG_FAIL_PAGE_ALLOC
+        #CONFIG_FAIL_MAKE_REQUEST
+        #CONFIG_FAIL_IO_TIMEOUT
+        #CONFIG_FAIL_MMC_REQUEST
+       	#CONFIG_FAIL_FUTEX
+        #CONFIG_FAULT_INJECTION_DEBUG_FS
+        #CONFIG_FAULT_INJECTION_STACKTRACE_FILTER
+
+        #CONFIG_LATENCYTOP
+        #CONFIG_DEBUG_STRICT_USER_COPY_CHECKS
+
+        #
+        # Trace
+        #
+        #CONFIG_FUNCTION_TRACER
+        #CONFIG_FUNCTION_GRAPH_TRACER
+        #CONFIG_IRQSOFF_TRACER
+        #CONFIG_PREEMPT_TRACER
+        #CONFIG_ENABLE_DEFAULT_TRACERS
+        #CONFIG_TRACER_SNAPSHOT_PER_CPU_SWAP
+        #CONFIG_BRANCH_PROFILE_NONE
+        #CONFIG_PROFILE_ANNOTATED_BRANCHES
+        #CONFIG_PROFILE_ALL_BRANCHES
+        #CONFIG_STACK_TRACER
+        #CONFIG_DYNAMIC_FTRACE
+        #CONFIG_FUNCTION_PROFILER
+        #CONFIG_MMIOTRACE
+    "
+    local _disabled="
+        CONFIG_TEST_KASAN
+        CONFIG_SYNO_KEXEC_TEST
+    "
+
+    while read _cfg; do
+        ([ -z "$_cfg" ] || [[ "$_cfg" =~ .*"#".* ]]) && continue
+        INFO "Enable $_cfg"
+        ./scripts/config --enable $_cfg
+    done <<< "$_enabled"
+
+    while read _cfg; do
+        ([ -z "$_cfg" ] || [[ "$_cfg" =~ .*"#".* ]]) && continue
+        INFO "Disable $_cfg"
+        ./scripts/config --disable $_cfg
+    done <<< "$_disabled"
+
+	# Required if enabling CONFIG_DEBUG_LOCKDEP
+    ./scripts/config --set-val CONFIG_PHYSICAL_START 0x200000
+
+	# Disable -Wframe-larger-than warnings with KASAN=y
+    ./scripts/config --set-val CONFIG_FRAME_WARN 0
+}

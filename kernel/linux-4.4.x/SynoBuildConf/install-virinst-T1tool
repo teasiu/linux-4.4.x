@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ -e "${KernelDir}/drivers/cpufreq/cpufreq_stats.ko" ]; then
+	install -Dm644 ${KernelDir}/drivers/cpufreq/cpufreq_stats.ko  ${TmpInstDir}/lib/modules/cpufreq_stats.ko
+fi
+
+if [ -e "${KernelDir}/drivers/acpi/processor.ko" ]; then
+	install -Dm644 ${KernelDir}/drivers/acpi/processor.ko  ${TmpInstDir}/lib/modules/processor.ko
+fi
+
+if [ -e "${KernelDir}/drivers/cpufreq/acpi-cpufreq.ko" ]; then
+	install -Dm644 ${KernelDir}/drivers/cpufreq/acpi-cpufreq.ko  ${TmpInstDir}/lib/modules/acpi-cpufreq.ko
+fi
+
+if [ -e "${KernelDir}/drivers/cpufreq/cpufreq_ondemand.ko" ]; then
+	install -Dm644 ${KernelDir}/drivers/cpufreq/cpufreq_ondemand.ko  ${TmpInstDir}/lib/modules/cpufreq_ondemand.ko
+fi
+
+if [ -e "${KernelDir}/drivers/cpufreq/cpufreq_performance.ko" ]; then
+	install -Dm644 ${KernelDir}/drivers/cpufreq/cpufreq_performance.ko  ${TmpInstDir}/lib/modules/cpufreq_performance.ko
+fi
+
+if [ -e "${KernelDir}/drivers/cpufreq/cpufreq_powersave.ko" ]; then
+    install -Dm644 ${KernelDir}/drivers/cpufreq/cpufreq_powersave.ko  ${TmpInstDir}/lib/modules/cpufreq_powersave.ko
+fi
+
+if [ -e "${KernelDir}/drivers/cpufreq/cpufreq_conservative.ko" ]; then
+    install -Dm644 ${KernelDir}/drivers/cpufreq/cpufreq_conservative.ko  ${TmpInstDir}/lib/modules/cpufreq_conservative.ko
+fi

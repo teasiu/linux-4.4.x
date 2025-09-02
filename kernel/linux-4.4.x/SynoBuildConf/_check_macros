@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+check_macro_fail()
+{
+    local WarnMsg=$1
+    local Macro=$2
+    # Build failed if not debug mode
+    [ -f ".debug" ] || WARNING "!!! CONFIG_SYNO check fail : $Macro"
+    WARNING "$WarnMsg"
+    WARNING "Please reconfirm your modifications before committing."
+    echo ""
+}
+
+check_define_macro()
+{
+    INFO "Check CONFIG_SYNO* macro define"
+    local GrepSynoDefine=""
+    local Macro=""
+    local SynoMacro=""
+    local SynoKconfigTable=`find . -name "Kconfig*" -exec grep -n "config SYNO" {} +`
+    declare -A array
+    declare -A SynoMacroWhiteList=( [SYNO_EXPORT_CONFIG]=1 \
+            [SYNO_UNICODE]=1 \
+            [SYNO_YOTAWIMAX_SUPPORT]=1 \
+            [SYNO_SATA_MV_EH]=1 \
+            [SYNO_FS_OPTIONS]=1 \
+	    )
+
+    IFS=$'\n'
+
+    GrepSynoDefine=`grep -E -o -rn --exclude-dir={.git,SynoBuildConf} "defined *\(CONFIG_SYNO([0-9]|[a-z]|[A-Z]|_)*"`
+    for WarnMsg in $GrepSynoDefine; do
+        SynoMacro=`echo "$WarnMsg" | cut -d "(" -f2 | cut -c 8-`
+        if [ ! -z ${array["$SynoMacro"]} ]; then
+            continue;
+        fi
+        if [ `echo $SynoKconfigTable | grep "config $SynoMacro" | wc -l` -eq 0 ]; then
+            check_macro_fail $WarnMsg $SynoMacro
+        else
+            array[$SynoMacro]=1
+        fi
+    done
+
+    GrepSynoDefine=`grep -E -o -rn --exclude-dir={.git,SynoBuildConf} "ifdef *CONFIG_SYNO([0-9]|[a-z]|[A-Z]|_)*"`
+    for WarnMsg in $GrepSynoDefine; do
+        SynoMacro=`echo "$WarnMsg" | sed 's/CONFIG_/@/g' | cut -d "@" -f2`
+        if [ ! -z ${array["$SynoMacro"]} ]; then
+            continue;
+        fi
+        if [ `echo $SynoKconfigTable | grep "config $SynoMacro" | wc -l` -eq 0 ]; then
+            check_macro_fail $WarnMsg $SynoMacro
+        else
+            array[$SynoMacro]=1
+        fi
+    done
+
+    #check: ifndef CONFIG_SYNO* case
+    GrepSynoDefine=`grep -E -o -rn --exclude-dir={.git,SynoBuildConf} "ifndef *CONFIG_SYNO"`
+    if [ `echo "$GrepSynoDefine" | wc -l` -ne 0  ]; then
+        for WarnMsg in $GrepSynoDefine; do
+            SynoMacro=`echo "$WarnMsg" | sed 's/CONFIG_/@/g' | cut -d "@" -f2`
+            check_macro_fail $WarnMsg $SynoMacro
+        done
+    fi
+
+    #check: if defined(SYNO_* case
+    GrepSynoDefine=`grep -E -o -rn --exclude-dir={.git,SynoBuildConf} "defined *\(SYNO([0-9]|[a-z]|[A-Z]|_)*"`
+    for WarnMsg in $GrepSynoDefine; do
+        Macro=`echo "$WarnMsg" | cut -d "(" -f2`
+        if [ -z ${SynoMacroWhiteList["$Macro"]} ]; then
+            check_macro_fail $WarnMsg $Macro
+        fi
+    done
+
+    #check: ifdef SYNO_* case
+    GrepSynoDefine=`grep -E -o -rn --exclude-dir={.git,SynoBuildConf} "ifdef *SYNO([0-9]|[a-z]|[A-Z]|_)*"`
+    for WarnMsg in $GrepSynoDefine; do
+        Macro=`echo "$WarnMsg" | awk '{print substr($0, index($0, "SYNO"))}'`
+        if [ -z ${SynoMacroWhiteList["$Macro"]} ]; then
+            check_macro_fail $WarnMsg $Macro
+        fi
+    done
+
+    unset IFS
+}
+

@@ -1,0 +1,230 @@
+#!/bin/bash
+# Copyright (c) 2000-2020 Synology Inc. All rights reserved.
+# vim:ft=sh
+
+# ========================================================================
+# To specify which platform depends on this kernel,
+# please edit the section [platform kernel] in config/project.depends
+# ========================================================================
+
+export ARCH="$ARCH"
+export CROSS_COMPILE="$ToolChainPrefix"
+export EXTRA_CFLAGS="-fdiagnostics-color=always"
+
+source "$ConfDir/_debug"
+
+# Copy key file
+cp -sv /lnxscripts/config/{signing_key,trusted_certificates,untrusted_certificates} certs/
+
+if [ "$PLATFORM_FAMILY" = "SYNOPLAT_F_X86_64" ] && [ "$BUILD_TARGET" != "DOCKERX64" ]; then
+	ln -s "${SysRootInclude}/hydrogen/hydrogen.h" "${KernelDir}/include/crypto/hydrogen.h"
+	ln -s "${SysRootInclude}/hydrogen/hydrogen.c" "${KernelDir}/crypto/hydrogen/hydrogen.c"
+	ln -s "${SysRootInclude}/hydrogen/impl" "${KernelDir}/crypto/hydrogen/impl"
+	sed -i "s/__RAMDISK_SIGN_PUBLIC_KEY__/$(cat /lnxscripts/config/rd_sign.pub | xxd -i -c 32 )/" \
+		"${KernelDir}/init/initramfs.c"
+fi
+
+if [ "$PLATFORM_FAMILY" = "SYNOPLAT_F_X86_64" ]; then
+	DECOMPRESSION_TYPE=$(shuf -i 1001-2147483647 -n 1)
+	sed -i "s/__DECOMPRESSION_TYPE__/${DECOMPRESSION_TYPE}/" \
+		"${KernelDir}/arch/x86/boot/compressed/head_64.S"
+	sed -i "s/__DECOMPRESSION_TYPE__/${DECOMPRESSION_TYPE}/" \
+		"${KernelDir}/lib/synolib/syno_kexec_test.c"
+fi
+
+case ${MakeClean} in
+	[Yy][Ee][Ss])
+		[ -f Makefile ] && make distclean
+		;;
+esac
+
+case ${CleanOnly} in
+	[Yy][Ee][Ss])
+		return
+		;;
+esac
+
+case "$BUILD_TARGET" in
+	APOLLOLAKE)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	DENVERTON)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	KVMX64)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	REALTEK_RTD1296)
+		KernelImage=${KernelDir}/arch/arm64/boot/Image
+		KernelTarget=Image.gz
+		MAKE_DTBS="yes"
+		MAKE_DTC_FLAGS="-p 8192"
+		;;
+	BROADWELLNK)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	BROADWELL)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	MARVELL_ARMADA37XX)
+		KernelImage=${KernelDir}/arch/arm64/boot/Image
+		KernelTarget=Image.gz
+		;;
+	PURLEY)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	COFFEELAKE)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	BROADWELLNTB)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	NEXTKVMX64)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	GEMINILAKE)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	REALTEK_RTD1619)
+		KernelImage=${KernelDir}/arch/arm64/boot/Image
+		KernelTarget=Image.gz
+		MAKE_DTBS="yes"
+		MAKE_DTC_FLAGS="-p 8192"
+		;;
+	SKYLAKED)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	V1000)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	BROADWELLNTBAP)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	KVMCLOUD)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	EPYC7002)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	R1000)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	ICELAKED)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	BROADWELLNKV2)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+	GEMINILAKEVS)
+		KernelImage=${KernelDir}/arch/x86_64/boot/bzImage
+		KernelTarget=bzImage
+		;;
+
+	*)
+		SkipThisProject
+		return
+		;;
+esac
+
+
+make_version()
+{
+    if [ -f "$VERSION_FILE" ]; then
+        expr $(GetDSMBuildNumber) - 1 > "$KernelDir/.version"
+    fi
+
+    [ -f ".debug" ] || return
+
+    local _protect_ver="$(dpkg -l | grep synoprotection-$PLATFORM_ABBR- | awk '{print $3}' | cut -d'-' -f2 | head -n1)"
+    local _dsm_ver="$(GetDSMBuildNumber)"
+    if [ -z "$_protect_ver" ]; then
+        WARNING "Unable to detect dpkg 'synoprotection'"
+        return
+    fi
+    if [ "$_dsm_ver" != "$_protect_ver" ]; then
+        WARNING "buildnumber in synoversion/VERSION doesn't match dpkg 'synoprotection'"
+        exit 1
+    fi
+}
+
+build_kernel()
+{
+    mkdir -p "$ImageDir/modules"
+    mkdir -p "include/linux/modules"
+    rm -f "$KernelImage"
+    rm -f "$ImageDir/modules/"*
+
+    cp -f "synoconfigs/$PLATFORM_ABBR" .config
+    if [ -f ".debug" ]; then
+        INFO ".debug detected. Configured as debug mode."
+        config_debug_mode
+        make olddefconfig
+    else
+        make oldconfig
+    fi
+
+    INFO "Build Synology Linux kernel 4.4.x"
+    make $MAKE_FLAGS $KernelTarget modules
+
+    # Check if kernel is built correctly
+    if [ ! -f "$KernelImage" ]; then
+        WARNING "Error! $KernelImage does not exist!"
+        exit 1;
+    fi
+}
+
+build_device_tree()
+{
+    if [ ! -z "$MAKE_DTBS" ]; then
+        INFO "Build Synology device tree"
+        make dtbs DTC_FLAGS="$MAKE_DTC_FLAGS";
+    fi
+}
+
+check_config()
+{
+    local _plat_config="synoconfigs/$PLATFORM_ABBR"
+
+    INFO "Compare kernel config with re-generated one"
+
+    ConfigDiff=`diff -bu $_plat_config .config`
+    if [ -z "$ConfigDiff" ]; then
+        INFO "Kernel config matches generated .config"
+    else
+        WARNING "========== diff -bu $_plat_config .config"
+        WARNING "$ConfigDiff"
+        WARNING "========== END of diff"
+        WARNING "There's difference between $_plat_config & .config"
+        WARNING "Please reconfirm your modifications before committing."
+
+        # Build failed if not debug mode
+        [ -f ".debug" ] || WARNING "!!! Diff EXISTS"
+    fi
+}
+
+make_version
+build_kernel
+build_device_tree
+
+
+source "$ConfDir/_check_macros"
+
+

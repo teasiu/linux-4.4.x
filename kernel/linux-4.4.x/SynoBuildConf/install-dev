@@ -1,0 +1,138 @@
+#!/bin/bash
+# Copyright (c) 2000-2020 Synology Inc. All rights reserved.
+
+checkKernelConfig()
+{
+	if [ $# -lt 1 ];then
+		echo "Wrong number of parameters to $FUNCNAME()"
+		return 1
+	fi
+
+	target_string="${1}=m"
+
+	if [ -z "`grep $target_string ${KernelDir}/.config`" ];then
+		return 1
+	else
+		return 0
+	fi
+}
+
+skip=0
+
+# get platform $ModuleList
+source "$ConfDir/_modules"
+
+if checkKernelConfig CONFIG_DM_MULTIPATH ; then
+	ModuleList="${ModuleList} ${ModDMMultipath}"
+fi
+
+rm -f ${ImageDir}/modules/*
+mkdir -p ${DebDevBuild}/image/modules;
+mkdir -p ${DebDevBuild}/image/modulesdebug;
+# Check if modules are built correctly
+for EACHFILE in $ModuleList;
+do
+	if [ -f "$EACHFILE" ]; then
+		cp -f ${EACHFILE} ${DebDevBuild}/image/modules
+		cp -f ${EACHFILE} ${DebDevBuild}/image/modulesdebug
+		FN=`basename ${EACHFILE}`
+		echo "$STRIP -d $DebDevBuild/image/modules/$FN"
+		$STRIP -d "$DebDevBuild/image/modules/$FN"
+		ls -l $EACHFILE
+	else
+		echo "Error! file $EACHFILE does not existed!"
+	fi
+done
+
+case ${BUILD_TARGET} in
+	APOLLOLAKE|DENVERTON|KVMX64|BROADWELL|BROADWELLNK|PURLEY|COFFEELAKE|BROADWELLNTB|NEXTKVMX64|GEMINILAKE|SKYLAKED|V1000|BROADWELLNTBAP|KVMCLOUD|EPYC7002|R1000|ICELAKED|BROADWELLNKV2|GEMINILAKEVS)
+		ZIMAGE="${KernelDir}/arch/x86_64/boot/bzImage"
+		;;
+	REALTEK_RTD1296)
+		lzma -z ${KernelDir}/arch/arm64/boot/Image
+		ZIMAGE="${KernelDir}/arch/arm64/boot/Image.lzma"
+
+		# for flash backup model
+		mkimage -A arm64 -C none -T kernel -O linux -a 0b000000 -e 0b000000 -n "kernel $(GetDSMBuildNumber)" -d ${ZIMAGE} ${ZIMAGE}_cksum
+		if [ $? -ne 0 ]; then
+			echo "Failed to do mkimage on ${ZIMAGE}"
+			return 1
+		fi
+		cp -fv ${ZIMAGE}_cksum ${DebDevBuild}/image/zImage_with_cksum
+
+		# folder for dtb
+		mkdir -p ${DebDevBuild}/image/files/sds-sii
+		# copy ds418j dtb, ds418j is rtd1293
+		cp -vf ${KernelDir}/arch/arm64/boot/dts/realtek/rtd-1293-synology-ds418j.dtb ${DebDevBuild}/image/files/sds-sii/dtb_ds418j.bin
+		# copy other rtd1296 models dtb
+		for model in ds418 ds218play ds118 ds218 eds19 rs819 ds220j ds420j ; do
+			DTBIMG=${KernelDir}/arch/arm64/boot/dts/realtek/rtd-1296-synology-${model}.dtb
+			cp -vf ${DTBIMG} ${DebDevBuild}/image/files/sds-sii/dtb_${model}.bin
+		done
+		;;
+	MARVELL_ARMADA37XX)
+		lzma -z ${KernelDir}/arch/arm64/boot/Image
+		mv ${KernelDir}/arch/arm64/boot/Image.lzma ${KernelDir}/arch/arm64/boot/zImage
+		ZIMAGE="${KernelDir}/arch/arm64/boot/zImage"
+       ;;
+	REALTEK_RTD1619)
+		lzma -z ${KernelDir}/arch/arm64/boot/Image
+		ZIMAGE="${KernelDir}/arch/arm64/boot/zImage"
+		mkimage -A arm64 -C none -T kernel -O linux -a 03000000 -e 03000000 -n "kernel $(GetDSMBuildNumber)" -d ${KernelDir}/arch/arm64/boot/Image.lzma ${ZIMAGE}
+		if [ $? -ne 0 ]; then
+			echo "Failed to do mkimage on ${KernelDir}/arch/arm64/boot/Image.lzma"
+			return 1
+		fi
+
+		mkdir -p ${SysRootInclude}/crypto
+		cp -vf crypto/ocf/cryptodev.h ${SysRootInclude}/crypto
+		for model in ds220play ds220; do
+			DTBIMG=${KernelDir}/arch/arm64/boot/dts/realtek/rtd16xx/rtd-1619-synology-${model}.dtb
+			mkdir -p ${DebDevBuild}/image/files/sds-sii/dtbs/synology_rtd1619_${model}/
+			cp -vf ${DTBIMG} ${DebDevBuild}/image/files/sds-sii/dtbs/synology_rtd1619_${model}/model-vendor.dtb
+		done
+		;;
+	*)
+		skip=1
+		;;
+esac
+
+KernelDirBase=`basename $KernelDir`
+CurDir=`pwd`
+CurDirBase=`basename $CurDir`
+if [ "$KernelDirBase" != "$CurDirBase" ]; then
+	skip=1
+fi
+
+if [ $skip -eq 1 ]; then
+	SkipThisProject
+	return
+fi
+
+if [ -r "$ZIMAGE" ]; then
+	cp -fv $ZIMAGE ${DebDevBuild}/image/zImage
+else
+	echo "$ZIMAGE does not exist...."
+	exit 1
+fi
+
+SystemMap="${KernelDir}/System.map"
+VmLinux="${KernelDir}/vmlinux"
+
+mkdir -p ${DebDevBuild}/image/synodebug
+
+if [ -r "$SystemMap" ]; then
+	cp -fv $SystemMap ${DebDevBuild}/image/synodebug/
+fi
+if [ -r "$VmLinux" ]; then
+	cp -fv $VmLinux ${DebDevBuild}/image/synodebug/
+	gzip -f9 ${DebDevBuild}/image/synodebug/vmlinux
+fi
+
+install -Dm755 "scripts/sign-file" "${DebDevBuild}/usr/syno/bin/sign-file"
+
+# shellcheck source=/dev/null
+source "$ScriptsDir/include/kernel-devel"
+
+install -Dm644 "include/linux/syno_gpio.h" "$WRKDIR/include/linux/syno_gpio.h"
+install -Dm644 "include/linux/syno_fdt.h" "$WRKDIR/include/linux/syno_fdt.h"

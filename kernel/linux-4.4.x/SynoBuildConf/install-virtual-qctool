@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$PLATFORM_FAMILY" != "SYNOPLAT_F_X86_64" ]; then
+	SkipThisProject
+	return
+fi
+
+if [ -e "tools/power/x86/turbostat_backport/turbostat" ]; then
+	install -Dm755 tools/power/x86/turbostat_backport/turbostat "${TmpInstDir}"/turbostat
+fi

@@ -1,0 +1,5 @@
+{
+	"!!! Diff EXISTS" : [""],
+	"warning:" : [" locale ", "dpkg: warning:"],
+	"!!! CONFIG_SYNO check fail" : [""]
+}
