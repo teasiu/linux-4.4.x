@@ -2,7 +2,7 @@
 
 ```
 source ./env.sh
-cd $KERNEL_DIR
+cd $KERNEL_SRC
 make
 
 ```
